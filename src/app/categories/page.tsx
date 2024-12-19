@@ -1,21 +1,14 @@
 "use client";
 
-import {
-  DeleteButton,
-  EditButton,
-  List,
-  ShowButton,
-  useTable,
-} from "@refinedev/antd";
-import type { BaseRecord } from "@refinedev/core";
-import { Space, Table } from "antd";
+import {DeleteButton, EditButton, List, ShowButton, useTable,} from "@refinedev/antd";
+import type {BaseRecord} from "@refinedev/core";
+import {Space, Table} from "antd";
 import React from "react";
 
 export default function CategoryList() {
   const { tableProps } = useTable({
     syncWithLocation: true,
   });
-
   return (
     <List>
       <Table {...tableProps} rowKey="id">

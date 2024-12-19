@@ -1,7 +1,40 @@
 "use client";
 
 import dataProviderSimpleRest from "@refinedev/simple-rest";
+import {DataProvider} from "@refinedev/core";
+import axios from "axios";
 
 const API_URL = "https://api.fake-rest.refine.dev";
+const MYAPI = "http://refn-be.test:8080/api/v1"
+export const dataProvider = dataProviderSimpleRest(MYAPI);
+export const customDataProvider: DataProvider = {
+    deleteOne: async ({resource, id, variables, meta}) => {
+        const {data} = await axios.delete(`${MYAPI}/${resource}/${id}`);
+        return {data: data};
+    },
+    getOne: async ({resource, id, meta}) => {
+        const {data} = await axios.get(`${MYAPI}/${resource}/${id}`);
+        console.log("getOne:", JSON.stringify(data, null, 2));
+        return {data};
+    },
+    getList: async ({resource, pagination, sorters, filters}) => {
+        const {current, pageSize} = pagination || {};
+        const sortQuery = sorters?.map(({field, order}) => `${field},${order}`).join(",");
+        const filterQuery = filters?.map(({field, operator, value}) => `${field},${operator},${value}`).join(",");
 
-export const dataProvider = dataProviderSimpleRest(API_URL);
+        console.log(filterQuery)
+        const {data} = await axios.get(`${MYAPI}/${resource}`, {
+            params: {
+                page: current,
+                perPage: pageSize,
+                sort: sortQuery,
+                filter: filterQuery,
+            },
+        });
+        // console.log("getList:", JSON.stringify(data, null, 2));
+        return {
+            data: data.data,
+            total: data.meta.total,
+        };
+    }
+}
