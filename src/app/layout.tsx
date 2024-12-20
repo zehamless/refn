@@ -54,6 +54,14 @@ export default function RootLayout({
                                             icon: <DesktopOutlined/>,
                                         }
                                     },
+                                    {
+                                        name: "pos",
+                                        list: "/pos",
+                                        identifier: "pos",
+                                        meta: {
+                                            label: "POS",
+                                        }
+                                    },
                                     // {
                                     //     name: "blog_posts",
                                     //     list: "/blog-posts",
