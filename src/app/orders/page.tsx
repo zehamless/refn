@@ -1,11 +1,10 @@
 "use client";
 
-import {DeleteButton, EditButton, FilterDropdown, List, ShowButton, useTable,} from "@refinedev/antd";
+import {DateField, DeleteButton, EditButton, FilterDropdown, List, ShowButton, useTable,} from "@refinedev/antd";
 import {type BaseRecord} from "@refinedev/core";
 import {Select, Space, Table, Tag} from "antd";
 import React from "react";
 import {OrderTagColor, OrderTagDescription} from "@libs/enums";
-import moment from "moment";
 
 export default function OrderList() {
     const {tableProps} = useTable({
@@ -48,7 +47,7 @@ export default function OrderList() {
                 />
                 <Table.Column dataIndex="updated_at" title={"Create/Update Date"} sorter={{multiple: 1}}
                               render={(value, record, index) => (
-                                  moment(value).format("YYYY-MM-DD HH:mm:ss")
+                                  <DateField value={value}/>
                               )}/>
                 <Table.Column
                     title={"Actions"}
