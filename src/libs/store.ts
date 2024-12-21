@@ -9,6 +9,9 @@ interface State {
     notes: string;
     paid: number;
     initialClothes: Clothes[];
+    deliverOption: string;
+    personOption: string | number;
+    estimatedDate: string;
 }
 
 const initialState: State = {
@@ -17,6 +20,9 @@ const initialState: State = {
     orders: [],
     notes: "",
     paid: 0,
+    deliverOption: "pickup",
+    personOption: "",
+    estimatedDate: "",
 };
 
 type StateStore = State & {
@@ -43,6 +49,7 @@ export const useStore = create<StateStore>((set, get) => ({
     removeData: (id) => set((state) => ({
         clothes: state.clothes.filter((item) => item.id !== id)
     })),
+
     searchData: (search: string) => set((state) => ({
         clothes: search
             ? state.initialClothes.filter((item: Clothes) =>
@@ -50,6 +57,7 @@ export const useStore = create<StateStore>((set, get) => ({
             )
             : state.initialClothes
     })),
+
     addOrder: (data) => set((state) => {
         const existingOrder = state.orders.find((item) => item.id === data.id);
         return {
@@ -61,7 +69,7 @@ export const useStore = create<StateStore>((set, get) => ({
                 )
                 : [...state.orders, data]
         };
-    }),
+    }, false),
 
     updateQty: (id, qty) => set((state) => ({
         orders: state.orders.map((item) =>

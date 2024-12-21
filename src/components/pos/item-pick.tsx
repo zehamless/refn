@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import {useEffect} from "react";
 import {useStore} from "@libs/store";
 import {useList} from "@refinedev/core";
@@ -6,7 +6,11 @@ import {Card, Flex} from "antd";
 import Search from "antd/es/input/Search";
 
 export default function ItemPick() {
-    const {addOrder, clothes, searchData, addData} = useStore();
+    const addOrder = useStore((state) => state.addOrder);
+    const clothes = useStore((state) => state.clothes);
+    const searchData = useStore((state) => state.searchData);
+    const addData = useStore((state) => state.addData);
+
     const {data, isLoading, isError} = useList({
         resource: 'services',
         pagination: {
@@ -15,26 +19,30 @@ export default function ItemPick() {
     });
 
     useEffect(() => {
-        if (data) {
-            addData(data.data);
+        if (data?.data && data.data.length > 0) {
+            addData(data.data); // Populate the store with the fetched data
         }
-    }, [data, addData]);
+    }, [data?.data, addData]);
 
     if (isLoading) {
         console.log("Data is still loading");
-    } else if (isError) {
+        return <p>Loading...</p>;
+    }
+
+    if (isError) {
         console.log("Error loading data");
+        return <p>Error loading data</p>;
     }
 
     return (
         <>
             <Search
-                placeholder="input search text"
+                placeholder="Input search text"
                 allowClear
                 onChange={(e) => searchData(e.target.value)}
             />
             <Flex gap={"small"} wrap justify={"space-around"}
-                  style={{marginTop: 10, height: '500px', overflowY: 'auto'}}>
+                  style={{marginTop: 10, height: '550px', overflowY: 'auto'}}>
                 {
                     clothes.map((item) => (
                         <Card
@@ -53,5 +61,5 @@ export default function ItemPick() {
                 }
             </Flex>
         </>
-    )
+    );
 }

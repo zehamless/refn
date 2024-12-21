@@ -1,4 +1,5 @@
 'use client'
+import {useCallback, useMemo, useState} from "react";
 import {
     Button,
     ColorPicker,
@@ -15,17 +16,19 @@ import {
     Typography
 } from "antd";
 import {BlockOutlined, UserAddOutlined} from "@ant-design/icons";
-import {useCallback, useMemo, useState} from "react";
-import {useModal} from "@refinedev/antd";
 import {useStore} from "@libs/store";
+import {useModal} from "@refinedev/antd";
 import {Clothes} from "@libs/definitions";
 import {DefaultOptionType} from "antd/lib/select";
-
 
 const PERSON_OPTIONS: DefaultOptionType[] = [
     {value: 'jack', label: 'Jack'},
     {value: 'lucy', label: 'Lucy'},
     {value: 'tom', label: 'Tom'},
+];
+const DELIVER_OPTION: DefaultOptionType[] = [
+    {value: 'pickup', label: 'Pickup'},
+    {value: 'delivery', label: 'Delivery'},
 ];
 
 const TABLE_SCROLL = {y: 400, x: "max-content"};
@@ -33,7 +36,16 @@ const TABLE_SCROLL = {y: 400, x: "max-content"};
 export default function ItemTable() {
     const [formType, setFormType] = useState<'addon' | 'notes' | null>(null);
     const [form] = Form.useForm();
-    const {addOrder, orders, notes, addNotes, updateQty, deleteOrder, sendPayment} = useStore();
+    const addOrder = useStore((state) => state.addOrder);
+    const orders = useStore((state) => state.orders);
+    const notes = useStore((state) => state.notes);
+    const addNotes = useStore((state) => state.addNotes);
+    const updateQty = useStore((state) => state.updateQty);
+    const deleteOrder = useStore((state) => state.deleteOrder);
+    const sendPayment = useStore((state) => state.sendPayment);
+    const deliverOption = useStore((state) => state.deliverOption);
+    const personOption = useStore((state) => state.personOption);
+
     const {show, close, modalProps} = useModal();
 
     const handleShowModal = useCallback((type: 'addon' | 'notes') => {
@@ -97,17 +109,38 @@ export default function ItemTable() {
         }
     ], [updateQty, deleteOrder]);
 
+    const memoizedDatePicker = useMemo(() => (
+        <DatePicker style={{width: '25%'}} placeholder="Estimation date"/>
+    ), []);
+
+    const memoizedDeliverOption = useMemo(() => (
+        <Select
+            style={{width: '20%'}}
+            showSearch
+            placeholder="Delivery Option"
+            optionFilterProp="label"
+            options={DELIVER_OPTION}
+            defaultValue={deliverOption}
+        />
+    ), [deliverOption]);
+
+    const memoizedPersonOption = useMemo(() => (
+        <Select
+            style={{width: '35%'}}
+            showSearch
+            placeholder="Select a person"
+            optionFilterProp="label"
+            options={PERSON_OPTIONS}
+            defaultValue={personOption}
+        />
+    ), [personOption]);
+
     return (
         <>
             <Flex gap="middle" wrap justify="center">
-                <DatePicker style={{width: '25%'}}/>
-                <Select
-                    style={{width: '60%'}}
-                    showSearch
-                    placeholder="Select a person"
-                    optionFilterProp="label"
-                    options={PERSON_OPTIONS}
-                />
+                {memoizedDatePicker}
+                {memoizedDeliverOption}
+                {memoizedPersonOption}
                 <Button type="primary" shape="circle" icon={<UserAddOutlined/>}/>
             </Flex>
             <Table
