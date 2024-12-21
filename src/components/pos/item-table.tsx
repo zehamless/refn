@@ -32,7 +32,7 @@ const TABLE_SCROLL = {y: 400, x: "max-content"};
 export default function ItemTable() {
     const [formType, setFormType] = useState<'addon' | 'notes' | null>(null);
     const [form] = Form.useForm();
-    const {addOrder, orders, notes, addNotes, updateQty, deleteOrder} = useStore();
+    const {addOrder, orders, notes, addNotes, updateQty, deleteOrder, sendPayment} = useStore();
     const {show, close, modalProps} = useModal();
 
     const handleShowModal = useCallback((type: 'addon' | 'notes') => {
@@ -157,11 +157,11 @@ const Footer = ({handleShowModal, orders}: {
     handleShowModal: (type: 'addon' | 'notes') => void,
     orders: { rate: number; qty: number }[]
 }) => {
-    const [paid, setPaid] = useState(0);
+    const {setPaid, paid, sendPayment} = useStore();
     const total = useMemo(() => orders.reduce((acc, item) => acc + item.rate * item.qty, 0), [orders]);
     const handlePaid = useCallback((value: number) => {
-        setPaid(prevState => (prevState ?? 0) + value);
-    }, []);
+        setPaid(value);
+    }, [setPaid]);
     return (
         <Flex vertical gap={"small"}>
             <Flex justify={"space-between"} gap={"small"} wrap>
@@ -184,7 +184,7 @@ const Footer = ({handleShowModal, orders}: {
                 <Popconfirm
                     title="Confirm Payment"
                     description={`Paid : ${(paid)}, unpaid: ${Math.max(total - paid, 0)}`}
-                    onConfirm={() => setPaid(0)}
+                    onConfirm={sendPayment}
                     okText="Yes"
                     cancelText="No"
                 >
