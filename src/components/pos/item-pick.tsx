@@ -1,10 +1,30 @@
 'use client'
-import Search from "antd/es/input/Search";
-import {Card, Flex} from "antd";
+import {useEffect} from "react";
 import {useStore} from "@libs/store";
+import {useList} from "@refinedev/core";
+import {Card, Flex} from "antd";
+import Search from "antd/es/input/Search";
 
 export default function ItemPick() {
-    const {addOrder, clothes, searchData} = useStore();
+    const {addOrder, clothes, searchData, addData} = useStore();
+    const {data, isLoading, isError} = useList({
+        resource: 'services',
+        pagination: {
+            mode: 'off'
+        }
+    });
+
+    useEffect(() => {
+        if (data) {
+            addData(data.data);
+        }
+    }, [data, addData]);
+
+    if (isLoading) {
+        console.log("Data is still loading");
+    } else if (isError) {
+        console.log("Error loading data");
+    }
 
     return (
         <>
@@ -12,7 +32,6 @@ export default function ItemPick() {
                 placeholder="input search text"
                 allowClear
                 onChange={(e) => searchData(e.target.value)}
-
             />
             <Flex gap={"small"} wrap justify={"space-around"}
                   style={{marginTop: 10, height: '500px', overflowY: 'auto'}}>
@@ -28,7 +47,7 @@ export default function ItemPick() {
                                 <div dangerouslySetInnerHTML={{__html: item.icon ?? ''}}/>
                             }
                         >
-                            <Card.Meta title={item.clothes}/>
+                            <Card.Meta title={item.name}/>
                         </Card>
                     ))
                 }

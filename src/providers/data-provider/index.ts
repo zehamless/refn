@@ -31,10 +31,14 @@ export const customDataProvider: DataProvider = {
                 filter: filterQuery,
             },
         });
-        // console.log("getList:", JSON.stringify(data, null, 2));
         return {
             data: data.data,
-            total: data.meta.total,
+            total: data.data.length,
         };
     }
+}
+
+export async function sendOrder(data: any) {
+    const response = await axios.post(`${MYAPI}/orders`, data);
+    return response.data;
 }

@@ -1,8 +1,8 @@
 export type Clothes = {
     id: number | string;
-    clothes: string;
+    name: string;
     color: string;
-    rate: number;
+    price: number;
     qty: number;
     icon?: string;
 }

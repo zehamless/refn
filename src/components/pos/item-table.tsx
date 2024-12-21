@@ -19,13 +19,14 @@ import {useCallback, useMemo, useState} from "react";
 import {useModal} from "@refinedev/antd";
 import {useStore} from "@libs/store";
 import {Clothes} from "@libs/definitions";
+import {DefaultOptionType} from "antd/lib/select";
 
 
-const PERSON_OPTIONS = [
+const PERSON_OPTIONS: DefaultOptionType[] = [
     {value: 'jack', label: 'Jack'},
     {value: 'lucy', label: 'Lucy'},
     {value: 'tom', label: 'Tom'},
-] as const;
+];
 
 const TABLE_SCROLL = {y: 400, x: "max-content"};
 
@@ -48,9 +49,9 @@ export default function ItemTable() {
             } else {
                 addOrder({
                     id: values.title,
-                    clothes: values.title,
+                    name: values.title,
                     color: '',
-                    rate: values.fee,
+                    price: values.price,
                     qty: 1
                 });
             }
@@ -63,13 +64,13 @@ export default function ItemTable() {
 
     const columns = useMemo(() => [
         {title: "ID", dataIndex: "id"},
-        {title: "Clothes", dataIndex: "clothes"},
+        {title: "Clothes", dataIndex: "name"},
         {
             title: "Color",
             dataIndex: "color",
             render: (value: string, record: Clothes) => <ColorPicker defaultValue={value} disabledAlpha/>
         },
-        {title: "Rate", dataIndex: "rate"},
+        {title: "Rate", dataIndex: "price"},
         {
             title: "Qty",
             dataIndex: "qty",
@@ -84,7 +85,7 @@ export default function ItemTable() {
         },
         {
             title: "Total",
-            render: (value: any, record: Clothes) => record.rate * record.qty
+            render: (value: any, record: Clothes) => record.price * record.qty
         },
         {
             title: "Actions",
@@ -132,7 +133,7 @@ export default function ItemTable() {
                             </Form.Item>
                             <Form.Item
                                 label="Fee"
-                                name="fee"
+                                name="price"
                                 rules={[{required: true, message: 'Please input the fee!'}]}
                             >
                                 <InputNumber addonBefore="$" style={{width: '100%'}}/>
@@ -155,10 +156,10 @@ export default function ItemTable() {
 
 const Footer = ({handleShowModal, orders}: {
     handleShowModal: (type: 'addon' | 'notes') => void,
-    orders: { rate: number; qty: number }[]
+    orders: { price: number; qty: number }[]
 }) => {
     const {setPaid, paid, sendPayment} = useStore();
-    const total = useMemo(() => orders.reduce((acc, item) => acc + item.rate * item.qty, 0), [orders]);
+    const total = useMemo(() => orders.reduce((acc, item) => acc + item.price * item.qty, 0), [orders]);
     const handlePaid = useCallback((value: number) => {
         setPaid(value);
     }, [setPaid]);
@@ -188,7 +189,8 @@ const Footer = ({handleShowModal, orders}: {
                     okText="Yes"
                     cancelText="No"
                 >
-                    <Button type="primary" size={"large"} style={{marginTop: 10}} block>Pay</Button>
+                    <Button type="primary" size={"large"} style={{marginTop: 10}} disabled={total < 1}
+                            block>Pay</Button>
                 </Popconfirm>
             </Flex>
         </Flex>
