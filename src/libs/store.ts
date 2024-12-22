@@ -10,7 +10,6 @@ interface State {
     paid: number;
     initialClothes: Clothes[];
     deliverOption: string;
-    personOption: string | number;
     estimatedDate: string;
 }
 
@@ -21,7 +20,6 @@ const initialState: State = {
     notes: "",
     paid: 0,
     deliverOption: "pickup",
-    personOption: "",
     estimatedDate: "",
 };
 

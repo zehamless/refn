@@ -1,5 +1,5 @@
 'use client'
-import {useCallback, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {
     Button,
     ColorPicker,
@@ -20,12 +20,8 @@ import {useStore} from "@libs/store";
 import {useModal} from "@refinedev/antd";
 import {Clothes} from "@libs/definitions";
 import {DefaultOptionType} from "antd/lib/select";
+import {useList} from "@refinedev/core";
 
-const PERSON_OPTIONS: DefaultOptionType[] = [
-    {value: 'jack', label: 'Jack'},
-    {value: 'lucy', label: 'Lucy'},
-    {value: 'tom', label: 'Tom'},
-];
 const DELIVER_OPTION: DefaultOptionType[] = [
     {value: 'pickup', label: 'Pickup'},
     {value: 'delivery', label: 'Delivery'},
@@ -44,9 +40,20 @@ export default function ItemTable() {
     const deleteOrder = useStore((state) => state.deleteOrder);
     const sendPayment = useStore((state) => state.sendPayment);
     const deliverOption = useStore((state) => state.deliverOption);
-    const personOption = useStore((state) => state.personOption);
-
+    const [personOptions, setPersonOptions] = useState<DefaultOptionType[]>([]);
     const {show, close, modalProps} = useModal();
+    const {data, isLoading, isError} = useList({
+        resource: 'users',
+        pagination: {
+            mode: 'off'
+        }
+    });
+    useEffect(() => {
+        if (data?.data && data.data.length > 0) {
+            console.log("Data fetched", data.data);
+            setPersonOptions(data.data.map((item: any) => ({value: item.id, label: (item.name + ' # ' + item.phone)})));
+        }
+    }, [data?.data]);
 
     const handleShowModal = useCallback((type: 'addon' | 'notes') => {
         setFormType(type);
@@ -110,12 +117,11 @@ export default function ItemTable() {
     ], [updateQty, deleteOrder]);
 
     const memoizedDatePicker = useMemo(() => (
-        <DatePicker style={{width: '25%'}} placeholder="Estimation date"/>
+        <DatePicker style={{flexGrow: 1}} placeholder="Estimation date"/>
     ), []);
 
     const memoizedDeliverOption = useMemo(() => (
         <Select
-            style={{width: '20%'}}
             showSearch
             placeholder="Delivery Option"
             optionFilterProp="label"
@@ -126,22 +132,26 @@ export default function ItemTable() {
 
     const memoizedPersonOption = useMemo(() => (
         <Select
-            style={{width: '35%'}}
+            style={{flexGrow: 1}}
+            disabled={isLoading || isError}
             showSearch
             placeholder="Select a person"
             optionFilterProp="label"
-            options={PERSON_OPTIONS}
-            defaultValue={personOption}
+            options={personOptions}
         />
-    ), [personOption]);
+    ), [personOptions]);
 
     return (
         <>
-            <Flex gap="middle" wrap justify="center">
-                {memoizedDatePicker}
-                {memoizedDeliverOption}
-                {memoizedPersonOption}
-                <Button type="primary" shape="circle" icon={<UserAddOutlined/>}/>
+            <Flex gap="small" vertical wrap justify="center">
+                <Flex gap={"small"}>
+                    {memoizedDatePicker}
+                    {memoizedDeliverOption}
+                    <Button type="primary" shape="circle" icon={<UserAddOutlined/>}/>
+                </Flex>
+                <Flex>
+                    {memoizedPersonOption}
+                </Flex>
             </Flex>
             <Table
                 dataSource={orders}
