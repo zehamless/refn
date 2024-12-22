@@ -4,12 +4,20 @@ import {useStore} from "@libs/store";
 import {useList} from "@refinedev/core";
 import {Card, Flex} from "antd";
 import Search from "antd/es/input/Search";
+import {useShallow} from "zustand/react/shallow";
 
 export default function ItemPick() {
-    const addOrder = useStore((state) => state.addOrder);
-    const clothes = useStore((state) => state.clothes);
-    const searchData = useStore((state) => state.searchData);
-    const addData = useStore((state) => state.addData);
+    const {
+        clothes,
+        searchData,
+        addData,
+        addOrder
+    } = useStore(useShallow((state) => ({
+        clothes: state.clothes,
+        searchData: state.searchData,
+        addData: state.addData,
+        addOrder: state.addOrder
+    })))
 
     const {data, isLoading, isError} = useList({
         resource: 'services',

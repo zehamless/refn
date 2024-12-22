@@ -21,6 +21,7 @@ import {useModal} from "@refinedev/antd";
 import {Clothes} from "@libs/definitions";
 import {DefaultOptionType} from "antd/lib/select";
 import {useList} from "@refinedev/core";
+import {useShallow} from "zustand/react/shallow";
 
 const DELIVER_OPTION: DefaultOptionType[] = [
     {value: 'pickup', label: 'Pickup'},
@@ -32,15 +33,33 @@ const TABLE_SCROLL = {y: 400, x: "max-content"};
 export default function ItemTable() {
     const [formType, setFormType] = useState<'addon' | 'notes' | null>(null);
     const [form] = Form.useForm();
-    const addOrder = useStore((state) => state.addOrder);
-    const orders = useStore((state) => state.orders);
-    const notes = useStore((state) => state.notes);
-    const addNotes = useStore((state) => state.addNotes);
-    const updateQty = useStore((state) => state.updateQty);
-    const deleteOrder = useStore((state) => state.deleteOrder);
-    const sendPayment = useStore((state) => state.sendPayment);
-    const deliverOption = useStore((state) => state.deliverOption);
     const [personOptions, setPersonOptions] = useState<DefaultOptionType[]>([]);
+    const {
+        addOrder,
+        orders,
+        notes,
+        addNotes,
+        updateQty,
+        deleteOrder,
+        setEstimatedDate,
+        estimatedDate,
+        deliverOption,
+        setPerson,
+        setDeliverOption
+    } = useStore(useShallow((state) => ({
+        addOrder: state.addOrder,
+        orders: state.orders,
+        notes: state.notes,
+        addNotes: state.addNotes,
+        updateQty: state.updateQty,
+        deleteOrder: state.deleteOrder,
+        setEstimatedDate: state.setEstimatedDate,
+        estimatedDate: state.estimatedDate,
+        deliverOption: state.deliverOption,
+        setPerson: state.setPerson,
+        setDeliverOption: state.setDeliverOption
+    })));
+
     const {show, close, modalProps} = useModal();
     const {data, isLoading, isError} = useList({
         resource: 'users',
@@ -117,8 +136,9 @@ export default function ItemTable() {
     ], [updateQty, deleteOrder]);
 
     const memoizedDatePicker = useMemo(() => (
-        <DatePicker style={{flexGrow: 1}} placeholder="Estimation date"/>
-    ), []);
+        <DatePicker style={{flexGrow: 1}} placeholder="Estimation date" onChange={setEstimatedDate}
+                    defaultValue={estimatedDate}/>
+    ), [estimatedDate, setEstimatedDate]);
 
     const memoizedDeliverOption = useMemo(() => (
         <Select
@@ -127,19 +147,21 @@ export default function ItemTable() {
             optionFilterProp="label"
             options={DELIVER_OPTION}
             defaultValue={deliverOption}
+            onChange={setDeliverOption}
         />
-    ), [deliverOption]);
+    ), [deliverOption, setDeliverOption]);
 
     const memoizedPersonOption = useMemo(() => (
         <Select
             style={{flexGrow: 1}}
             disabled={isLoading || isError}
             showSearch
+            onChange={setPerson}
             placeholder="Select a person"
             optionFilterProp="label"
             options={personOptions}
         />
-    ), [personOptions]);
+    ), [isError, isLoading, personOptions, setPerson]);
 
     return (
         <>

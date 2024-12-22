@@ -2,6 +2,7 @@ import {create} from "zustand";
 import {Clothes} from "@libs/definitions";
 import {sendOrder} from "@providers/data-provider";
 import {BaseRecord} from "@refinedev/core";
+import dayjs from 'dayjs';
 
 interface State {
     clothes: Clothes[];
@@ -10,7 +11,8 @@ interface State {
     paid: number;
     initialClothes: Clothes[];
     deliverOption: string;
-    estimatedDate: string;
+    personOption: string | number;
+    estimatedDate: dayjs.Dayjs;
 }
 
 const initialState: State = {
@@ -20,7 +22,8 @@ const initialState: State = {
     notes: "",
     paid: 0,
     deliverOption: "pickup",
-    estimatedDate: "",
+    personOption: "",
+    estimatedDate: dayjs(),
 };
 
 type StateStore = State & {
@@ -34,6 +37,9 @@ type StateStore = State & {
     sendPayment: () => Promise<void>;
     setPaid: (paid: number) => void;
     resetState: () => void;
+    setPerson: (personOption: string | number) => void;
+    setEstimatedDate: (estimatedDate: dayjs.Dayjs) => void;
+    setDeliverOption: (deliverOption: string) => void;
 };
 
 export const useStore = create<StateStore>((set, get) => ({
@@ -43,19 +49,18 @@ export const useStore = create<StateStore>((set, get) => ({
         initialClothes: (data as Clothes[]).map(item => ({...item, qty: 1})),
         clothes: (data as Clothes[]).map(item => ({...item, qty: 1}))
     }),
-
+    setDeliverOption: (deliverOption) => set({deliverOption}),
     removeData: (id) => set((state) => ({
         clothes: state.clothes.filter((item) => item.id !== id)
     })),
-
     searchData: (search: string) => set((state) => ({
         clothes: search
-            ? state.initialClothes.filter((item: Clothes) =>
+            ? state.initialClothes.filter((item) =>
                 item.name.toLowerCase().includes(search.trim().toLowerCase())
             )
             : state.initialClothes
     })),
-
+    setPerson: (personOption) => set({personOption}),
     addOrder: (data) => set((state) => {
         const existingOrder = state.orders.find((item) => item.id === data.id);
         return {
@@ -67,30 +72,28 @@ export const useStore = create<StateStore>((set, get) => ({
                 )
                 : [...state.orders, data]
         };
-    }, false),
-
+    }),
     updateQty: (id, qty) => set((state) => ({
         orders: state.orders.map((item) =>
             item.id === id ? {...item, qty} : item
         )
     })),
-
     deleteOrder: (id) => set((state) => ({
         orders: state.orders.filter((item) => item.id !== id)
     })),
-
     addNotes: (notes) => set({notes}),
-
     sendPayment: async () => {
         try {
-            const {orders, notes, paid} = get();
-            await sendOrder({orders, notes, paid});
+            const {orders, notes, paid, personOption, deliverOption, estimatedDate} = get();
+            const formattedEstimatedDate = estimatedDate.toISOString();
+            // console.log({ orders, notes, paid, personOption, deliverOption, estimatedDate: formattedEstimatedDate });
+            await sendOrder({orders, notes, paid, personOption, deliverOption, estimatedDate: formattedEstimatedDate});
             set(initialState);
         } catch (error) {
             console.error('Payment failed:', error);
             throw error;
         }
     },
-
+    setEstimatedDate: (estimatedDate) => set({estimatedDate}),
     resetState: () => set(initialState),
 }));
