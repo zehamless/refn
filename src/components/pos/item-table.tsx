@@ -20,8 +20,10 @@ import {useStore} from "@libs/store";
 import {useModal} from "@refinedev/antd";
 import {Clothes} from "@libs/definitions";
 import {DefaultOptionType} from "antd/lib/select";
-import {useList} from "@refinedev/core";
+import {useList, useNotification} from "@refinedev/core";
 import {useShallow} from "zustand/react/shallow";
+import is from "@sindresorhus/is";
+import emptyString = is.emptyString;
 
 const DELIVER_OPTION: DefaultOptionType[] = [
     {value: 'pickup', label: 'Pickup'},
@@ -45,7 +47,8 @@ export default function ItemTable() {
         estimatedDate,
         deliverOption,
         setPerson,
-        setDeliverOption
+        setDeliverOption,
+        updateColor
     } = useStore(useShallow((state) => ({
         addOrder: state.addOrder,
         orders: state.orders,
@@ -57,7 +60,8 @@ export default function ItemTable() {
         estimatedDate: state.estimatedDate,
         deliverOption: state.deliverOption,
         setPerson: state.setPerson,
-        setDeliverOption: state.setDeliverOption
+        setDeliverOption: state.setDeliverOption,
+        updateColor: state.updateColor
     })));
 
     const {show, close, modalProps} = useModal();
@@ -106,7 +110,9 @@ export default function ItemTable() {
         {
             title: "Color",
             dataIndex: "color",
-            render: (value: string, record: Clothes) => <ColorPicker defaultValue={value} disabledAlpha/>
+            render: (value: string, record: Clothes) => <ColorPicker defaultValue={value}
+                                                                     onChange={(value) => updateColor(record.id, value.toHexString() ?? '')}
+                                                                     disabledAlpha/>
         },
         {title: "Rate", dataIndex: "price"},
         {
@@ -133,7 +139,7 @@ export default function ItemTable() {
                 </Flex>
             )
         }
-    ], [updateQty, deleteOrder]);
+    ], [updateQty, deleteOrder, updateColor]);
 
     const memoizedDatePicker = useMemo(() => (
         <DatePicker style={{flexGrow: 1}} placeholder="Estimation date" onChange={setEstimatedDate}
@@ -223,11 +229,40 @@ const Footer = ({handleShowModal, orders}: {
     handleShowModal: (type: 'addon' | 'notes') => void,
     orders: { price: number; qty: number }[]
 }) => {
-    const {setPaid, paid, sendPayment} = useStore();
+    const {setPaid, paid, sendPayment, personOption} = useStore(
+        useShallow((state) => ({
+            setPaid: state.setPaid,
+            paid: state.paid,
+            sendPayment: state.sendPayment,
+            personOption: state.personOption
+        }))
+    );
+    const {open, close} = useNotification()
     const total = useMemo(() => orders.reduce((acc, item) => acc + item.price * item.qty, 0), [orders]);
     const handlePaid = useCallback((value: number) => {
         setPaid(value);
     }, [setPaid]);
+
+    const handleSendPayment = useCallback(async () => {
+        try {
+            await sendPayment();
+            if (open) {
+                open({
+                    message: "Payment Successful",
+                    description: `Paid: ${paid}, unpaid: ${Math.max(total - paid, 0)}`,
+                    type: "success",
+                });
+            }
+        } catch (error) {
+            if (open) {
+                open({
+                    message: "Payment Failed",
+                    description: (error as Error).message,
+                    type: "error",
+                });
+            }
+        }
+    }, [open, paid, sendPayment, total]);
     return (
         <Flex vertical gap={"small"}>
             <Flex justify={"space-between"} gap={"small"} wrap>
@@ -250,11 +285,12 @@ const Footer = ({handleShowModal, orders}: {
                 <Popconfirm
                     title="Confirm Payment"
                     description={`Paid : ${(paid)}, unpaid: ${Math.max(total - paid, 0)}`}
-                    onConfirm={sendPayment}
+                    onConfirm={handleSendPayment}
                     okText="Yes"
                     cancelText="No"
                 >
-                    <Button type="primary" size={"large"} style={{marginTop: 10}} disabled={total < 1}
+                    <Button type="primary" size={"large"} style={{marginTop: 10}}
+                            disabled={total < 1 || emptyString(personOption)}
                             block>Pay</Button>
                 </Popconfirm>
             </Flex>

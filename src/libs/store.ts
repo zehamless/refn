@@ -40,14 +40,18 @@ type StateStore = State & {
     setPerson: (personOption: string | number) => void;
     setEstimatedDate: (estimatedDate: dayjs.Dayjs) => void;
     setDeliverOption: (deliverOption: string) => void;
+    updateColor: (id: number | string, color: string) => void;
 };
-
 export const useStore = create<StateStore>((set, get) => ({
     ...initialState,
     setPaid: (paid) => set({paid}),
     addData: (data) => set({
         initialClothes: (data as Clothes[]).map(item => ({...item, qty: 1})),
-        clothes: (data as Clothes[]).map(item => ({...item, qty: 1}))
+        clothes: (data as Clothes[]).map(item => ({
+            ...item,
+            qty: 1,
+            color: '#1677ff'
+        }))
     }),
     setDeliverOption: (deliverOption) => set({deliverOption}),
     removeData: (id) => set((state) => ({
@@ -78,6 +82,11 @@ export const useStore = create<StateStore>((set, get) => ({
             item.id === id ? {...item, qty} : item
         )
     })),
+    updateColor: (id, color) => set((state) => ({
+        orders: state.orders.map((item) =>
+            item.id === id ? {...item, color} : item
+        )
+    })),
     deleteOrder: (id) => set((state) => ({
         orders: state.orders.filter((item) => item.id !== id)
     })),
@@ -86,8 +95,16 @@ export const useStore = create<StateStore>((set, get) => ({
         try {
             const {orders, notes, paid, personOption, deliverOption, estimatedDate} = get();
             const formattedEstimatedDate = estimatedDate.toISOString();
-            // console.log({ orders, notes, paid, personOption, deliverOption, estimatedDate: formattedEstimatedDate });
-            await sendOrder({orders, notes, paid, personOption, deliverOption, estimatedDate: formattedEstimatedDate});
+            console.log({orders, notes, paid, personOption, deliverOption, estimatedDate: formattedEstimatedDate});
+            await sendOrder({
+                orders,
+                notes,
+                paid,
+                customer_id: personOption,
+                delivery_option: deliverOption,
+                estimated_date: formattedEstimatedDate
+            });
+
             set(initialState);
         } catch (error) {
             console.error('Payment failed:', error);
