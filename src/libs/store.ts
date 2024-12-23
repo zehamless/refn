@@ -11,7 +11,7 @@ interface State {
     paid: number;
     initialClothes: Clothes[];
     deliverOption: string;
-    personOption: string | number;
+    personOption: number | null;
     estimatedDate: dayjs.Dayjs;
 }
 
@@ -22,7 +22,7 @@ const initialState: State = {
     notes: "",
     paid: 0,
     deliverOption: "pickup",
-    personOption: "",
+    personOption: null,
     estimatedDate: dayjs(),
 };
 
@@ -37,7 +37,7 @@ type StateStore = State & {
     sendPayment: () => Promise<void>;
     setPaid: (paid: number) => void;
     resetState: () => void;
-    setPerson: (personOption: string | number) => void;
+    setPerson: (personOption: number) => void;
     setEstimatedDate: (estimatedDate: dayjs.Dayjs) => void;
     setDeliverOption: (deliverOption: string) => void;
     updateColor: (id: number | string, color: string) => void;
@@ -67,14 +67,21 @@ export const useStore = create<StateStore>((set, get) => ({
     setPerson: (personOption) => set({personOption}),
     addOrder: (data) => set((state) => {
         const existingOrder = state.orders.find((item) => item.id === data.id);
-        return {
-            orders: existingOrder
-                ? state.orders.map((item) =>
-                    item.id === data.id
-                        ? {...item, qty: item.qty + 1}
-                        : item
+        if (existingOrder) {
+            return {
+                orders: state.orders.map((item) =>
+                    item.id === data.id ? {...item, qty: item.qty + 1} : item
                 )
-                : [...state.orders, data]
+            };
+        }
+        return {
+            orders: [...state.orders, {
+                id: data.id,
+                name: data.name,
+                color: data.color,
+                price: data.price,
+                qty: data.qty
+            }]
         };
     }),
     updateQty: (id, qty) => set((state) => ({
@@ -105,12 +112,18 @@ export const useStore = create<StateStore>((set, get) => ({
                 estimated_date: formattedEstimatedDate
             });
 
-            set(initialState);
+            get().resetState(); // Call resetState here
         } catch (error) {
             console.error('Payment failed:', error);
             throw error;
         }
     },
     setEstimatedDate: (estimatedDate) => set({estimatedDate}),
-    resetState: () => set(initialState),
+    resetState: () => set((state) => ({
+        ...state,
+        orders: [],
+        personOption: null,
+        paid: 0,
+        notes: ""
+    })),
 }));

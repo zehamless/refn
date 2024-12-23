@@ -22,8 +22,6 @@ import {Clothes} from "@libs/definitions";
 import {DefaultOptionType} from "antd/lib/select";
 import {useList, useNotification} from "@refinedev/core";
 import {useShallow} from "zustand/react/shallow";
-import is from "@sindresorhus/is";
-import emptyString = is.emptyString;
 
 const DELIVER_OPTION: DefaultOptionType[] = [
     {value: 'pickup', label: 'Pickup'},
@@ -48,7 +46,8 @@ export default function ItemTable() {
         deliverOption,
         setPerson,
         setDeliverOption,
-        updateColor
+        updateColor,
+        personOption
     } = useStore(useShallow((state) => ({
         addOrder: state.addOrder,
         orders: state.orders,
@@ -61,7 +60,8 @@ export default function ItemTable() {
         deliverOption: state.deliverOption,
         setPerson: state.setPerson,
         setDeliverOption: state.setDeliverOption,
-        updateColor: state.updateColor
+        updateColor: state.updateColor,
+        personOption: state.personOption
     })));
 
     const {show, close, modalProps} = useModal();
@@ -90,9 +90,9 @@ export default function ItemTable() {
                 addNotes(values.description);
             } else {
                 addOrder({
-                    id: values.title,
+                    id: orders.length + 1,
                     name: values.title,
-                    color: '',
+                    color: '#1677ff',
                     price: values.price,
                     qty: 1
                 });
@@ -102,7 +102,7 @@ export default function ItemTable() {
         } catch (error) {
             console.error('Validation failed:', error);
         }
-    }, [formType, addNotes, addOrder, form, close]);
+    }, [form, formType, close, addNotes, addOrder, orders.length]);
 
     const columns = useMemo(() => [
         {title: "ID", dataIndex: "id"},
@@ -160,14 +160,17 @@ export default function ItemTable() {
     const memoizedPersonOption = useMemo(() => (
         <Select
             style={{flexGrow: 1}}
-            disabled={isLoading || isError}
+            loading={isLoading || isError}
             showSearch
             onChange={setPerson}
             placeholder="Select a person"
             optionFilterProp="label"
+            autoClearSearchValue
+            allowClear
+            value={personOption}
             options={personOptions}
         />
-    ), [isError, isLoading, personOptions, setPerson]);
+    ), [isError, isLoading, personOptions, setPerson, personOption]);
 
     return (
         <>
@@ -252,6 +255,7 @@ const Footer = ({handleShowModal, orders}: {
                     description: `Paid: ${paid}, unpaid: ${Math.max(total - paid, 0)}`,
                     type: "success",
                 });
+                setPaid(0);
             }
         } catch (error) {
             if (open) {
@@ -262,7 +266,7 @@ const Footer = ({handleShowModal, orders}: {
                 });
             }
         }
-    }, [open, paid, sendPayment, total]);
+    }, [open, paid, sendPayment, total, setPaid]);
     return (
         <Flex vertical gap={"small"}>
             <Flex justify={"space-between"} gap={"small"} wrap>
@@ -281,7 +285,7 @@ const Footer = ({handleShowModal, orders}: {
             <Divider/>
             <Flex vertical>
                 <InputNumber placeholder="Paid Amount" addonBefore="$" min={0} style={{width: '100%'}}
-                             onChange={(value) => handlePaid(Number(value))}/>
+                             onChange={(value) => handlePaid(Number(value))} value={paid === 0 ? null : paid} required/>
                 <Popconfirm
                     title="Confirm Payment"
                     description={`Paid : ${(paid)}, unpaid: ${Math.max(total - paid, 0)}`}
@@ -290,7 +294,7 @@ const Footer = ({handleShowModal, orders}: {
                     cancelText="No"
                 >
                     <Button type="primary" size={"large"} style={{marginTop: 10}}
-                            disabled={total < 1 || emptyString(personOption)}
+                            disabled={total < 1 || !personOption}
                             block>Pay</Button>
                 </Popconfirm>
             </Flex>
