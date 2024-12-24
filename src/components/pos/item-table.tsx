@@ -20,7 +20,7 @@ import {useStore} from "@libs/store";
 import {useModal} from "@refinedev/antd";
 import {Clothes} from "@libs/definitions";
 import {DefaultOptionType} from "antd/lib/select";
-import {useList, useNotification} from "@refinedev/core";
+import {useCreate, useList, useNotification} from "@refinedev/core";
 import {useShallow} from "zustand/react/shallow";
 
 const DELIVER_OPTION: DefaultOptionType[] = [
@@ -31,7 +31,7 @@ const DELIVER_OPTION: DefaultOptionType[] = [
 const TABLE_SCROLL = {y: 400, x: "max-content"};
 
 export default function ItemTable() {
-    const [formType, setFormType] = useState<'addon' | 'notes' | null>(null);
+    const [formType, setFormType] = useState<'addon' | 'notes' | 'user' | null>(null);
     const [form] = Form.useForm();
     const [personOptions, setPersonOptions] = useState<DefaultOptionType[]>([]);
     const {
@@ -47,7 +47,7 @@ export default function ItemTable() {
         setPerson,
         setDeliverOption,
         updateColor,
-        personOption
+        personOption,
     } = useStore(useShallow((state) => ({
         addOrder: state.addOrder,
         orders: state.orders,
@@ -61,15 +61,18 @@ export default function ItemTable() {
         setPerson: state.setPerson,
         setDeliverOption: state.setDeliverOption,
         updateColor: state.updateColor,
-        personOption: state.personOption
+        personOption: state.personOption,
     })));
 
     const {show, close, modalProps} = useModal();
-    const {data, isLoading, isError} = useList({
+    const {data, isLoading: isListLoading, isError} = useList({
         resource: 'users',
         pagination: {
             mode: 'off'
         }
+    });
+    const {mutate, isLoading: isCreateLoading} = useCreate({
+        resource: 'users',
     });
     useEffect(() => {
         if (data?.data && data.data.length > 0) {
@@ -78,22 +81,39 @@ export default function ItemTable() {
         }
     }, [data?.data]);
 
-    const handleShowModal = useCallback((type: 'addon' | 'notes') => {
+    const handleShowModal = useCallback((type: 'addon' | 'notes' | 'user') => {
         setFormType(type);
         show();
     }, [show]);
 
     const handleModalOK = useCallback(async () => {
         try {
-            const values = await form.validateFields();
+            const formValues = await form.validateFields();
             if (formType === 'notes') {
-                addNotes(values.description);
+                addNotes(formValues.description);
+            } else if (formType === 'user') {
+                //Todo: Add user to server
+                mutate({
+                    values: {
+                        name: formValues.name,
+                        phone: formValues.phone,
+                        address: formValues.address,
+                        customer: true
+                    },
+                    successNotification: (data, values, resource) => {
+                        return {
+                            message: `User added successfully`,
+                            description: "Success with no errors",
+                            type: "success",
+                        };
+                    },
+                })
             } else {
                 addOrder({
                     id: orders.length + 1,
-                    name: values.title,
+                    name: formValues.title,
                     color: '#1677ff',
-                    price: values.price,
+                    price: formValues.price,
                     qty: 1
                 });
             }
@@ -102,7 +122,7 @@ export default function ItemTable() {
         } catch (error) {
             console.error('Validation failed:', error);
         }
-    }, [form, formType, close, addNotes, addOrder, orders.length]);
+    }, [form, formType, close, addNotes, mutate, addOrder, orders.length]);
 
     const columns = useMemo(() => [
         {title: "ID", dataIndex: "id"},
@@ -160,7 +180,7 @@ export default function ItemTable() {
     const memoizedPersonOption = useMemo(() => (
         <Select
             style={{flexGrow: 1}}
-            loading={isLoading || isError}
+            loading={isListLoading || isError}
             showSearch
             onChange={setPerson}
             placeholder="Select a person"
@@ -170,7 +190,12 @@ export default function ItemTable() {
             value={personOption}
             options={personOptions}
         />
-    ), [isError, isLoading, personOptions, setPerson, personOption]);
+    ), [isError, isListLoading, personOptions, setPerson, personOption]);
+    const memoizedCreateUser = useMemo(() => (
+        <Button type="primary" shape="circle" icon={<UserAddOutlined/>} loading={isCreateLoading} onClick={() => {
+            handleShowModal('user')
+        }}/>
+    ), [handleShowModal, isCreateLoading]);
 
     return (
         <>
@@ -178,7 +203,7 @@ export default function ItemTable() {
                 <Flex gap={"small"}>
                     {memoizedDatePicker}
                     {memoizedDeliverOption}
-                    <Button type="primary" shape="circle" icon={<UserAddOutlined/>}/>
+                    {memoizedCreateUser}
                 </Flex>
                 <Flex>
                     {memoizedPersonOption}
@@ -213,7 +238,7 @@ export default function ItemTable() {
                                 <InputNumber addonBefore="$" style={{width: '100%'}}/>
                             </Form.Item>
                         </>
-                    ) : (
+                    ) : formType === 'notes' ? (
                         <Form.Item
                             label="Description"
                             name="description"
@@ -221,6 +246,30 @@ export default function ItemTable() {
                         >
                             <Input.TextArea defaultValue={notes}/>
                         </Form.Item>
+                    ) : (
+                        <>
+                            <Form.Item
+                                label="Name"
+                                name="name"
+                                rules={[{required: true, message: 'Please input the name!'}]}
+                            >
+                                <Input/>
+                            </Form.Item>
+                            <Form.Item
+                                label="Address"
+                                name="address"
+                            >
+                                <Input/>
+                            </Form.Item>
+                            <Form.Item
+                                label="Phone"
+                                name="phone"
+                                rules={[{required: true, message: 'Please input the phone!'}]}
+                            >
+                                <Input/>
+                            </Form.Item>
+                        </>
+
                     )}
                 </Form>
             </Modal>

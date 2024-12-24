@@ -17,6 +17,12 @@ export const customDataProvider: DataProvider = {
         console.log("getOne:", JSON.stringify(data, null, 2));
         return {data};
     },
+    create: async ({resource, variables, meta}) => {
+        const {data} = await axios.post(`${MYAPI}/${resource}`, variables);
+        return {
+            data
+        }
+    },
     getList: async ({resource, pagination, sorters, filters}) => {
         const {current, pageSize} = pagination || {};
         const sortQuery = sorters?.map(({field, order}) => `${field},${order}`).join(",");
