@@ -37,9 +37,10 @@ export const customDataProvider: DataProvider = {
                 filter: filterQuery,
             },
         });
+
         return {
             data: data.data,
-            total: data.data.length,
+            total: data.meta?.total ?? data.data.length,
         };
     }
 }
