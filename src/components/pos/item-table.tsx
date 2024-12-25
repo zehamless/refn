@@ -182,7 +182,10 @@ export default function ItemTable() {
             style={{flexGrow: 1}}
             loading={isListLoading || isError}
             showSearch
-            onChange={setPerson}
+            onChange={(value) => {
+                setPerson(Number(value));
+                form.resetFields();
+            }}
             placeholder="Select a person"
             optionFilterProp="label"
             autoClearSearchValue
