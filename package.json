@@ -15,6 +15,8 @@
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
     "@ant-design/nextjs-registry": "^1.0.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@refinedev/antd": "^5.44.0",
     "@refinedev/cli": "^2.16.21",
     "@refinedev/core": "^4.47.1",

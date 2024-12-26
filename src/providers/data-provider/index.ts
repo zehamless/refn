@@ -49,3 +49,7 @@ export async function sendOrder(data: any) {
     const response = await axios.post(`${MYAPI}/orders`, data);
     return response.data;
 }
+
+export async function getStatDashboard() {
+    return await axios.get(`${MYAPI}/dashboard`);
+}
