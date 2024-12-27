@@ -53,3 +53,11 @@ export async function sendOrder(data: any) {
 export async function getStatDashboard() {
     return await axios.get(`${MYAPI}/dashboard`);
 }
+
+export async function getRecentOrders() {
+    return await axios.get(`${MYAPI}/dashboard/recent-orders`);
+}
+
+export async function getProcessOrders() {
+    return await axios.get(`${MYAPI}/dashboard/processing-orders`);
+}
