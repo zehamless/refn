@@ -1,14 +1,23 @@
 'use client'
 import {OrderTagColor} from "@libs/enums";
 import {DateField, Show} from "@refinedev/antd";
-import {ColorPicker, Descriptions, Divider, Space, Table, Tag, Typography} from "antd";
+import {ColorPicker, Descriptions, Divider, Select, Space, Table, Tag, Typography} from "antd";
 import React, {useMemo} from "react";
-import {useShow} from "@refinedev/core";
+import {useShow, useUpdate} from "@refinedev/core";
 import {Clothes} from "@libs/definitions";
 
+const options = [
+    {label: "Unpaid", value: "unpaid"},
+    {label: "Processing", value: "processing"},
+    {label: "Completed", value: "completed"},
+    {label: "Cancelled", value: "cancelled"},
+];
 const OrderShow: React.FC = () => {
     const {queryResult: {data, isLoading}} = useShow({});
     const record = data?.data?.data;
+    const {mutate} = useUpdate({
+        resource: "orders",
+    })
 
     const columns = useMemo(() => [
         {title: "ID", dataIndex: "id"},
@@ -92,9 +101,38 @@ const OrderShow: React.FC = () => {
             children: <Tag color="magenta">{record?.paid ?? "N/A"}</Tag>,
         },
     ], [record]);
+    const handleUpdate = async (status: string) => {
+        // console.log("status:", status);
+        mutate({
+            id: record?.id,
+            values: {
+                status: status
+            }
+        })
+    }
+    const selectButton = () => {
+        // console.log(record?.status);
+        return (
+            <Select
+                value={record?.status}
+                options={options}
+                loading={isLoading}
+                disabled={isLoading}
+                style={{width: 120}}
+                onChange={handleUpdate}
+            />
+        );
+    };
 
     return (
-        <Show isLoading={isLoading} canDelete canEdit={false}>
+        <Show isLoading={isLoading} canDelete canEdit={false}
+              headerButtons={({defaultButtons}) => (
+                  <>
+                      {defaultButtons}
+                      {selectButton()}
+                  </>
+              )}
+        >
             <Space direction="vertical" size="middle" style={{display: 'flex'}}>
                 <Descriptions title="Order Info" items={items} column={4}/>
                 <Table

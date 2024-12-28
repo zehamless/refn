@@ -23,6 +23,12 @@ export const customDataProvider: DataProvider = {
             data
         }
     },
+    update: async ({resource, id, variables, meta}) => {
+        const {data} = await axios.patch(`${MYAPI}/${resource}/${id}`, variables);
+        return {
+            data
+        }
+    },
     getList: async ({resource, pagination, sorters, filters}) => {
         const {current, pageSize} = pagination || {};
         const sortQuery = sorters?.map(({field, order}) => `${field},${order}`).join(",");
