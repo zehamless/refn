@@ -1,8 +1,9 @@
+'use client'
 import React from "react";
 import {ThemedLayoutV2} from "@refinedev/antd";
 import {Header} from "@components/header";
-import {authProviderServer} from "@providers/auth-provider/auth-provider.server";
 import {redirect} from "next/navigation";
+import {authProviderClient} from "@providers/auth-provider/auth-provider.client";
 
 export default async function Layout({children}: React.PropsWithChildren) {
     const data = await getData();
@@ -15,7 +16,7 @@ export default async function Layout({children}: React.PropsWithChildren) {
 }
 
 async function getData() {
-    const {authenticated, redirectTo} = await authProviderServer.check();
+    const {authenticated, redirectTo} = await authProviderClient.check();
 
     return {
         authenticated,

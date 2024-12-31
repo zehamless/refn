@@ -1,91 +1,142 @@
 "use client";
 
-import type { AuthProvider } from "@refinedev/core";
-import Cookies from "js-cookie";
+import type {AuthProvider} from "@refinedev/core";
+import axios from "@libs/axios";
 
-const mockUsers = [
-  {
-    name: "John Doe",
-    email: "johndoe@mail.com",
-    roles: ["admin"],
-    avatar: "https://i.pravatar.cc/150?img=1",
-  },
-  {
-    name: "Jane Doe",
-    email: "janedoe@mail.com",
-    roles: ["editor"],
-    avatar: "https://i.pravatar.cc/150?img=1",
-  },
-];
+// Utility function to handle API responses
+const handleApiResponse = async (apiCall: Promise<any>, successMessage: string) => {
+    try {
+        const response = await apiCall;
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error: any) {
+        return {
+            success: false,
+            error: {
+                message: error.response?.data?.message || `Error: ${successMessage} failed`,
+                name: "ApiError",
+            },
+        };
+    }
+};
 
+// Auth provider implementation
 export const authProviderClient: AuthProvider = {
-  login: async ({ email, username, password, remember }) => {
-    // Suppose we actually send a request to the back end here.
-    const user = mockUsers[0];
+    login: async ({email, password, remember = false}) => {
+        try {
+            // Get CSRF token first
+            await axios.get("/csrf-cookie");
 
-    if (user) {
-      Cookies.set("auth", JSON.stringify(user), {
-        expires: 30, // 30 days
-        path: "/",
-      });
-      return {
-        success: true,
-        redirectTo: "/",
-      };
-    }
+            // Attempt login
+            const response = await axios.post("/login", {
+                email,
+                password,
+                remember
+            });
 
-    return {
-      success: false,
-      error: {
-        name: "LoginError",
-        message: "Invalid username or password",
-      },
-    };
-  },
-  logout: async () => {
-    Cookies.remove("auth", { path: "/" });
-    return {
-      success: true,
-      redirectTo: "/login",
-    };
-  },
-  check: async () => {
-    const auth = Cookies.get("auth");
-    if (auth) {
-      return {
-        authenticated: true,
-      };
-    }
+            // Store user data if needed
+            if (response.data.user) {
+                localStorage.setItem("auth", JSON.stringify(response.data.user));
+            }
 
-    return {
-      authenticated: false,
-      logout: true,
-      redirectTo: "/login",
-    };
-  },
-  getPermissions: async () => {
-    const auth = Cookies.get("auth");
-    if (auth) {
-      const parsedUser = JSON.parse(auth);
-      return parsedUser.roles;
-    }
-    return null;
-  },
-  getIdentity: async () => {
-    const auth = Cookies.get("auth");
-    if (auth) {
-      const parsedUser = JSON.parse(auth);
-      return parsedUser;
-    }
-    return null;
-  },
-  onError: async (error) => {
-    if (error.response?.status === 401) {
-      return {
-        logout: true,
-      };
-    }
+            return {
+                success: true,
+                redirectTo: "/",
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                error: {
+                    message: error.response?.data?.message || "Login failed",
+                    name: "LoginError",
+                },
+            };
+        }
+    },
 
-    return { error };
-  },
+    logout: async () => {
+        try {
+            await axios.get("/csrf-cookie");
+            await axios.post("/logout");
+
+            // Clear stored auth data
+            localStorage.removeItem("auth");
+
+            return {
+                success: true,
+                redirectTo: "/login",
+            };
+        } catch (error: any) {
+            return {
+                success: false,
+                error: {
+                    message: error.response?.data?.message || "Logout failed",
+                    name: "LogoutError",
+                },
+            };
+        }
+    },
+
+    check: async () => {
+        try {
+            const {data} = await axios.get("/check");
+
+            if (data) {
+                // Update stored user data
+                localStorage.setItem("auth", JSON.stringify(data));
+                return {
+                    authenticated: true,
+                };
+            }
+
+            return {
+                authenticated: false,
+                redirectTo: "/login",
+            };
+        } catch (error) {
+            return {
+                authenticated: false,
+                redirectTo: "/login",
+            };
+        }
+    },
+
+    getPermissions: async () => {
+        try {
+            const authData = localStorage.getItem("auth");
+            if (!authData) return null;
+
+            const user = JSON.parse(authData);
+            return user.roles || null;
+        } catch {
+            return null;
+        }
+    },
+
+    getIdentity: async () => {
+        try {
+            const authData = localStorage.getItem("auth");
+            if (!authData) return null;
+
+            return JSON.parse(authData);
+        } catch {
+            return null;
+        }
+    },
+
+    onError: async (error) => {
+        const status = error.response?.status;
+
+        if (status === 401 || status === 403) {
+            localStorage.removeItem("auth");
+            return {
+                logout: true,
+                redirectTo: "/login",
+            };
+        }
+
+        return {error};
+    },
 };

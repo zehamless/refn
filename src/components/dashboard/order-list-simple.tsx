@@ -44,7 +44,7 @@ export default function OrderListSimple({order, title}: OrderListSimpleProps) {
                         </Flex>
                     </List.Item>
                 )}
-                style={{maxHeight: '400px', overflow: 'auto'}}
+                style={{height: '400px', overflow: 'auto'}}
             />
         </Card>
     )

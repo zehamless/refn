@@ -1,41 +1,36 @@
 "use client";
 
-import dataProviderSimpleRest from "@refinedev/simple-rest";
 import {DataProvider} from "@refinedev/core";
-import axios from "axios";
+import axios from "@libs/axios";
 
-const API_URL = "https://api.fake-rest.refine.dev";
-const MYAPI = "http://refn-be.test:8080/api/v1"
-export const dataProvider = dataProviderSimpleRest(MYAPI);
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+// console.log("API_URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
+
 export const customDataProvider: DataProvider = {
     deleteOne: async ({resource, id, variables, meta}) => {
-        const {data} = await axios.delete(`${MYAPI}/${resource}/${id}`);
+        const {data} = await axios.delete(`${API_URL}/${resource}/${id}`);
         return {data: data};
     },
     getOne: async ({resource, id, meta}) => {
-        const {data} = await axios.get(`${MYAPI}/${resource}/${id}`);
+        const {data} = await axios.get(`${API_URL}/${resource}/${id}`);
         console.log("getOne:", JSON.stringify(data, null, 2));
         return {data};
     },
     create: async ({resource, variables, meta}) => {
-        const {data} = await axios.post(`${MYAPI}/${resource}`, variables);
-        return {
-            data
-        }
+        const {data} = await axios.post(`${API_URL}/${resource}`, variables);
+        return {data};
     },
     update: async ({resource, id, variables, meta}) => {
-        const {data} = await axios.patch(`${MYAPI}/${resource}/${id}`, variables);
-        return {
-            data
-        }
+        const {data} = await axios.patch(`${API_URL}/${resource}/${id}`, variables);
+        return {data};
     },
     getList: async ({resource, pagination, sorters, filters}) => {
         const {current, pageSize} = pagination || {};
         const sortQuery = sorters?.map(({field, order}) => `${field},${order}`).join(",");
-        const filterQuery = filters?.map(({field, operator, value}) => `${field},${operator},${value}`).join(",");
+        const filterQuery = filters?.map(({key, operator, value}) => `${key},${operator},${value}`).join(",");
 
-        console.log(filterQuery)
-        const {data} = await axios.get(`${MYAPI}/${resource}`, {
+        console.log(filterQuery);
+        const {data} = await axios.get(`${API_URL}/${resource}`, {
             params: {
                 page: current,
                 perPage: pageSize,
@@ -48,22 +43,22 @@ export const customDataProvider: DataProvider = {
             data: data.data,
             total: data.meta?.total ?? data.data.length,
         };
-    }
-}
+    },
+};
 
 export async function sendOrder(data: any) {
-    const response = await axios.post(`${MYAPI}/orders`, data);
+    const response = await axios.post(`${API_URL}/orders`, data);
     return response.data;
 }
 
 export async function getStatDashboard() {
-    return await axios.get(`${MYAPI}/dashboard`);
+    return await axios.get(`${API_URL}/dashboard`);
 }
 
 export async function getRecentOrders() {
-    return await axios.get(`${MYAPI}/dashboard/recent-orders`);
+    return await axios.get(`${API_URL}/dashboard/recent-orders`);
 }
 
 export async function getProcessOrders() {
-    return await axios.get(`${MYAPI}/dashboard/processing-orders`);
+    return await axios.get(`${API_URL}/dashboard/processing-orders`);
 }
